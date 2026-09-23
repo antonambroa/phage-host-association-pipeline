@@ -1,0 +1,29 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Local data and generated outputs
+data/
+work/
+results/
+logs/
+*.nhr
+*.nin
+*.nsq
+*.ndb
+*.not
+*.ntf
+*.nto
+
+# Large sequence/data files outside the tiny examples
+*.fna
+*.fa
+*.fasta
+*.fna.gz
+*.fa.gz
+*.fasta.gz
+!examples/**/*.fna
+!examples/**/*.fa
+!examples/**/*.fasta
