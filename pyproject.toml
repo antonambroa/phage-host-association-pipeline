@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phage-host-association-pipeline"
+version = "0.1.0"
+description = "Build inspectable candidate phage-host association tables from sequence-search evidence"
+requires-python = ">=3.10"
+dependencies = ["biopython>=1.81"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
