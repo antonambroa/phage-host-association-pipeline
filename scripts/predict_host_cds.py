@@ -3,12 +3,13 @@ from __future__ import annotations
 
 import argparse
 import gzip
+import os
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
-import sys
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
@@ -40,15 +41,21 @@ def main() -> None:
         if output.exists():
             print(f"skip existing: {output}")
             continue
-        with tempfile.TemporaryDirectory(prefix="phage-host-prodigal-") as tmp:
-            tmpdir = Path(tmp)
-            input_path = materialize_if_gz(row["fasta_path"], tmpdir)
-            temporary_output = tmpdir / "predicted.cds.fna"
-            subprocess.run(
-                ["prodigal", "-i", str(input_path), "-d", str(temporary_output), "-p", args.prodigal_mode, "-q"],
-                check=True,
-            )
-            shutil.move(str(temporary_output), output)
+        # Write next to the final file so the promotion is an atomic rename on the same
+        # filesystem; moving from a system temp dir can degrade to copy-then-delete and
+        # leave a partial file that a rerun would mistake for finished output.
+        temporary_output = outdir / f"{output.name}.{os.getpid()}.tmp"
+        temporary_output.unlink(missing_ok=True)
+        try:
+            with tempfile.TemporaryDirectory(prefix="phage-host-prodigal-") as tmp:
+                input_path = materialize_if_gz(row["fasta_path"], Path(tmp))
+                subprocess.run(
+                    ["prodigal", "-i", str(input_path), "-d", str(temporary_output), "-p", args.prodigal_mode, "-q"],
+                    check=True,
+                )
+            temporary_output.replace(output)
+        finally:
+            temporary_output.unlink(missing_ok=True)
         print(f"host={row['genome_id']} cds={output}")
 
 

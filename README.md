@@ -41,7 +41,8 @@ The original working directory was useful for testing the idea, but several choi
 - host CDS prediction is cached once per host instead of being rerun for every phage-host pair;
 - pair tables contain paths and derived features rather than duplicating entire genomes inside JSON documents;
 - subprocess failures are propagated instead of silently continuing with incomplete output;
-- BLAST and Prodigal outputs are promoted to their final paths only after successful completion, so interrupted jobs are not mistaken for finished work.
+- BLAST and Prodigal outputs are written next to their final paths and renamed into place only after successful completion, so interrupted jobs are not mistaken for finished work;
+- BLAST hits whose subject IDs cannot be mapped to a host genome stop the run by default instead of silently disappearing from the results.
 
 ## Requirements
 
@@ -126,6 +127,8 @@ Additional constraints can be added without rerunning BLAST, for example:
   --min-identity 95 \
   --min-query-coverage 0.1
 ```
+
+If a BLAST subject ID that passes the filters is missing from the host sequence index, the script stops and lists examples instead of writing an incomplete table. This usually means the index and the BLAST database were built from different FASTA files. Pass `--allow-unmapped` only when the database intentionally contains sequences outside the index; unmapped IDs are then skipped and counted on stderr.
 
 Each output row represents one phage–host genome pair. Hits across multiple contigs from the same host assembly are aggregated into that pair while the contributing subject sequence IDs are retained. The row also preserves summary evidence such as hit count, maximum identity/alignment length, minimum E-value, best bit score and best query/subject coverage.
 

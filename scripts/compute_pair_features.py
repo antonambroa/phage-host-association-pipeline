@@ -62,7 +62,9 @@ def main() -> None:
             host_id = row["host_id"]
             cds_path = Path(args.host_cds_dir) / f"{host_id}.cds.fna"
             if cds_path.exists():
-                codon_cache.setdefault(host_id, json.dumps(codon_usage_from_cds_fasta(cds_path), sort_keys=True))
+                # Compute once per host: dict.setdefault would evaluate its argument on every row.
+                if host_id not in codon_cache:
+                    codon_cache[host_id] = json.dumps(codon_usage_from_cds_fasta(cds_path), sort_keys=True)
                 row["host_codon_usage_json"] = codon_cache[host_id]
             else:
                 row["host_codon_usage_json"] = ""

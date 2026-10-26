@@ -27,6 +27,12 @@ def main() -> None:
     p.add_argument("--min-identity", type=float, default=0.0)
     p.add_argument("--max-evalue", type=float, default=1e-5)
     p.add_argument("--min-query-coverage", type=float, default=0.0)
+    p.add_argument(
+        "--allow-unmapped",
+        action="store_true",
+        help="Skip BLAST subject IDs that are missing from the host sequence index instead of stopping. "
+        "Use only when the BLAST database intentionally contains sequences outside the index.",
+    )
     args = p.parse_args()
 
     host_index = read_sequence_index(args.host_sequence_index)
@@ -52,6 +58,14 @@ def main() -> None:
             key = (phage_id, host["genome_id"], host["fasta_path"])
             grouped[key].append(hit)
             subject_ids[key].add(hit.sseqid)
+
+    if unmatched and not args.allow_unmapped:
+        examples = ", ".join(sorted(unmatched)[:5])
+        raise SystemExit(
+            f"{len(unmatched)} BLAST subject IDs passing the filters are not in the host sequence index "
+            f"(e.g. {examples}). Check that the index and the BLAST database were built from the same "
+            "FASTA files, or pass --allow-unmapped to skip them."
+        )
 
     fields = [
         "phage_id", "host_id", "host_fasta", "host_sequence_count", "host_sequence_ids",
