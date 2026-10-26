@@ -188,4 +188,4 @@ The default `500 bp` threshold is preserved from the original exploratory workfl
 
 ## License
 
-No license has been assigned yet.
+MIT — see [LICENSE](LICENSE).
