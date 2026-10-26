@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import argparse
-import shutil
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -16,12 +16,27 @@ from phage_host_pipeline.mapping import read_manifest
 
 
 def concatenate(manifest: str, output: Path) -> int:
+    """Concatenate host FASTAs into one file, written atomically.
+
+    A newline is added after any input that does not end with one, so the next
+    file's header is never glued onto the last sequence line of the previous file.
+    """
     rows = read_manifest(manifest)
     output.parent.mkdir(parents=True, exist_ok=True)
-    with output.open("w") as out:
-        for row in rows:
-            with open_text(row["fasta_path"]) as src:
-                shutil.copyfileobj(src, out)
+    temporary = output.with_name(f"{output.name}.{os.getpid()}.tmp")
+    try:
+        with temporary.open("w") as out:
+            for row in rows:
+                last_char = ""
+                with open_text(row["fasta_path"]) as src:
+                    for chunk in iter(lambda: src.read(1 << 20), ""):
+                        out.write(chunk)
+                        last_char = chunk[-1]
+                if last_char and last_char != "\n":
+                    out.write("\n")
+        temporary.replace(output)
+    finally:
+        temporary.unlink(missing_ok=True)
     return len(rows)
 
 
